@@ -4266,108 +4266,59 @@ function stopAllPolling(){
 }
 
 async function mentorSend(){
+  const input = document.getElementById("mentor-input");
+  const text = input.value.trim();
+  if(!text) return;
 
-let input = document.getElementById("mentor-input");
+  const chat = document.getElementById("mentor-chat");
 
-let text = input.value.trim();
+  // Сообщение пользователя
+  chat.innerHTML += `<div class="mentor-msg from-user">${escapeHtml(text)}</div>`;
+  input.value = "";
+  chat.scrollTop = chat.scrollHeight;
 
-if(!text) return;
+  // Индикатор печати
+  const typingId = "typing-" + Date.now();
+  chat.innerHTML += `<div class="mentor-msg from-admin" id="${typingId}">🤖 Печатает<span class="dots">...</span></div>`;
+  chat.scrollTop = chat.scrollHeight;
 
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-6",
+        max_tokens: 1000,
+        system: "Ты AI Video Mentor — помощник по созданию видео с ИИ. Помогаешь писать промпты для Veo, Kling, Runway, Midjourney. Отвечаешь на русском языке. Кратко, по делу, с конкретными примерами промптов если нужно.",
+        messages: [{ role: "user", content: text }]
+      })
+    });
 
-let chat = document.getElementById("mentor-chat");
+    const data = await res.json();
+    document.getElementById(typingId)?.remove();
 
+    const answer = data.content?.[0]?.text || "Не удалось получить ответ.";
 
-// сообщение пользователя
-chat.innerHTML += `
-<div class="msg from-user">
-${text}
-</div>
-`;
+    const answerId = "answer-" + Date.now();
+    chat.innerHTML += `<div class="mentor-msg from-admin" id="${answerId}"></div>`;
+    const answerBox = document.getElementById(answerId);
 
-input.value="";
+    // Эффект печати
+    let i = 0;
+    function typeText(){
+      if(i < answer.length){
+        answerBox.textContent += answer[i++];
+        chat.scrollTop = chat.scrollHeight;
+        setTimeout(typeText, 12);
+      }
+    }
+    typeText();
 
-
-// индикатор печати
-let typingId = "typing-" + Date.now();
-
-chat.innerHTML += `
-<div class="msg from-admin" id="${typingId}">
-🤖 Печатает<span class="dots">...</span>
-</div>
-`;
-
-chat.scrollTop = chat.scrollHeight;
-
-
-try {
-
-let res = await fetch(
-"http://localhost:3000/mentor",
-{
-method:"POST",
-headers:{
-"Content-Type":"application/json"
-},
-body:JSON.stringify({
-message:text
-})
-}
-);
-
-
-let data = await res.json();
-
-
-// удаляем "печатает"
-document.getElementById(typingId).remove();
-
-
-// создаём пустое сообщение
-let answerId = "answer-" + Date.now();
-
-chat.innerHTML += `
-<div class="msg from-admin" id="${answerId}">
-🤖 
-</div>
-`;
-
-
-let answerBox = document.getElementById(answerId);
-
-
-// эффект печати
-let answer = data.answer;
-
-let i = 0;
-
-
-function typeText(){
-
-if(i < answer.length){
-
-answerBox.innerHTML += answer[i];
-
-i++;
-
-chat.scrollTop = chat.scrollHeight;
-
-setTimeout(typeText,20);
-
-}
-
-}
-
-
-typeText();
-
-
-}
-catch(error){
-  console.error(error);
-  document.getElementById(typingId).innerHTML =
-    "🤖 Функция временно недоступна, мы уже работаем над этим.";
-}
-
+  } catch(error) {
+    console.error(error);
+    const el = document.getElementById(typingId);
+    if(el) el.innerHTML = "🤖 Временно недоступно, попробуйте позже.";
+  }
 }
 
 /* ============ TTS ============ */
