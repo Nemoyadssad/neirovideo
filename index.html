@@ -2103,55 +2103,57 @@ style="width:100%;padding:16px;border-radius:12px;">
 
       <div class="footer-col">
         <h4>Нейровидео</h4>
-        <p class="muted" style="font-size:13px;line-height:1.7;max-width:280px;">
-          Онлайн-платформа по созданию видео с помощью искусственного интеллекта.
-          Внутри курса вас ждут уроки, библиотека промптов, AI Video Mentor,
-          инструменты для озвучки и практические материалы.
+        <p class="muted" style="font-size:13px; max-width:260px; line-height:1.6;">
+          Обучение по созданию видео с помощью ИИ: от первого промпта до готового ролика.
         </p>
       </div>
 
       <div class="footer-col">
-        <h4>Разделы сайта</h4>
-        <a onclick="goto('landing');scrollToId('curriculum')">📚 Программа курса</a>
+        <h4>Курс</h4>
+        <a onclick="goto('landing');scrollToId('curriculum')">Программа</a>
         <a onclick="goto('mentor')">🤖 AI Video Mentor</a>
-        <a onclick="goto('tts')">🎙️ AI Озвучка</a>
-        <a onclick="goto('landing');scrollToId('pricing')">💳 Тарифы</a>
-        <a onclick="goto('landing');scrollToId('testimonials')">⭐ Отзывы</a>
-        <a onclick="goto('landing');scrollToId('faq')">❓ FAQ</a>
+        <a onclick="goto('tts')">🎙️ Озвучка</a>
+        <a onclick="goto('landing');scrollToId('pricing')">Стоимость</a>
+        <a onclick="goto('landing');scrollToId('testimonials')">Отзывы</a>
+        <a onclick="goto('landing');scrollToId('faq')">Вопросы</a>
       </div>
 
       <div class="footer-col">
         <h4>Документы</h4>
-        <a onclick="openModal('offer')">📄 Публичная оферта</a>
-        <a onclick="openModal('privacy')">🔒 Политика конфиденциальности</a>
-        <a onclick="openModal('consent')">✅ Согласие на обработку данных</a>
+        <a onclick="openModal('offer')">Публичная оферта</a>
+        <a onclick="openModal('privacy')">Политика конфиденциальности</a>
+        <a onclick="openModal('consent')">Согласие на обработку данных</a>
       </div>
 
       <div class="footer-col">
-        <h4>Поддержка</h4>
-
-        <p class="muted" style="font-size:13px;line-height:1.6;margin-bottom:14px;">
-          Если у вас возникли вопросы по курсу, оплате, доступу или работе
-          платформы — напишите нам в Telegram. Мы всегда готовы помочь.
-        </p>
+        <h4>Связаться с нами</h4>
 
         <a href="https://t.me/supaischool"
            target="_blank"
            rel="noopener noreferrer"
            style="
-             display:inline-flex;
-             align-items:center;
-             justify-content:center;
-             padding:12px 20px;
-             border-radius:12px;
-             background:#229ED9;
-             color:#fff;
-             font-weight:600;
-             text-decoration:none;
-             transition:.2s;
-           ">
+              display:inline-flex;
+              align-items:center;
+              justify-content:center;
+              gap:8px;
+              padding:12px 18px;
+              margin-top:8px;
+              background:linear-gradient(135deg,#229ED9,#0088cc);
+              color:#fff;
+              border-radius:12px;
+              text-decoration:none;
+              font-weight:600;
+              box-shadow:0 8px 24px rgba(34,158,217,.25);
+              transition:.25s ease;
+           "
+           onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 12px 28px rgba(34,158,217,.35)'"
+           onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 8px 24px rgba(34,158,217,.25)'">
           💬 Написать в Telegram
         </a>
+
+        <p class="muted" style="font-size:13px;line-height:1.6;margin-top:12px;">
+          Поддержка по вопросам курса, оплаты и доступа.
+        </p>
       </div>
 
     </div>
