@@ -2648,9 +2648,14 @@ async function submitAuth(){
       if(!document.getElementById('auth-agree').checked){ errEl.textContent='Нужно принять условия оферты и согласие на обработку данных.'; return; }
       const existing = await getUser(email);
       if(existing){ errEl.textContent='Этот email уже зарегистрирован. Войдите.'; return; }
-      const allUsers = await listUsers();
       const passHash = await sha256(pass);
-      const isFirst = allUsers.length===0;
+let isFirst = false;
+try{
+  const check = await window.storage.list('admin_exists:', true);
+  isFirst = !(check && check.keys && check.keys.length>0);
+}catch(e){
+  isFirst = false; // при ошибке — НЕ считаем это первой регистрацией
+}
 
       // было: const refFromUrl = localStorage.getItem('pending_ref') || null;
       let refFromUrl = null;
