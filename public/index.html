@@ -2500,6 +2500,47 @@ function showToast(msg, type){
   setTimeout(()=>{ t.style.opacity='0'; t.style.transition='opacity .3s'; setTimeout(()=>t.remove(),300); }, 3800);
 }
 
+/* ============ REAL STORAGE (Railway backend) ============ */
+window.storage = {
+  async get(key, shared){
+    const r = await fetch('/api/kv/get', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      credentials:'include',
+      body: JSON.stringify({key, shared: !!shared})
+    });
+    const data = await r.json();
+    if(!data.result) throw new Error('not_found');
+    return data.result;
+  },
+  async set(key, value, shared){
+    const r = await fetch('/api/kv/set', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      credentials:'include',
+      body: JSON.stringify({key, value, shared: !!shared})
+    });
+    const data = await r.json();
+    return data.result || null;
+  },
+  async delete(key, shared){
+    const r = await fetch('/api/kv/delete', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      credentials:'include',
+      body: JSON.stringify({key, shared: !!shared})
+    });
+    const data = await r.json();
+    return data.result || null;
+  },
+  async list(prefix, shared){
+    const r = await fetch('/api/kv/list', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      credentials:'include',
+      body: JSON.stringify({prefix, shared: !!shared})
+    });
+    const data = await r.json();
+    return data.result || null;
+  }
+};
+
 /* ============ STORAGE (shared across everyone who opens this page — this is what makes registration/plans/chat real for testers) ============ */
 async function getUser(email){
   try{

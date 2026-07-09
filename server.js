@@ -1,229 +1,125 @@
-const express = require("express");
-const cors = require("cors");
-require("dotenv").config();
-
-const OpenAI = require("openai");
+const express = require('express');
+const cookieParser = require('cookie-parser');
+const crypto = require('crypto');
+const { Pool } = require('pg');
+const path = require('path');
 
 const app = express();
+app.use(express.json({ limit: '2mb' }));
+app.use(cookieParser());
+app.use(express.static(path.join(__dirname, 'public')));
 
-app.use(cors());
-app.use(express.json());
-
-
-const client = new OpenAI({
-  apiKey: process.env.OPENROUTER_API_KEY,
-  baseURL: "https://openrouter.ai/api/v1"
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.DATABASE_URL?.includes('railway') ? { rejectUnauthorized: false } : false
 });
 
+// Создаём таблицу при старте
+async function initDb() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS kv_store (
+      k TEXT NOT NULL,
+      shared BOOLEAN NOT NULL,
+      owner TEXT NOT NULL DEFAULT '',
+      value TEXT NOT NULL,
+      updated_at TIMESTAMPTZ DEFAULT now(),
+      PRIMARY KEY (k, shared, owner)
+    );
+  `);
+  console.log('DB ready');
+}
+initDb().catch(e => { console.error(e); process.exit(1); });
 
-// База знаний AI Mentor
-const SITE_INFO = `
+// Middleware: у каждого браузера — свой browser id (bid) в httpOnly-куке.
+// Он используется только для "персональных" (shared:false) данных.
+app.use((req, res, next) => {
+  let bid = req.cookies.bid;
+  if (!bid) {
+    bid = crypto.randomUUID();
+    res.cookie('bid', bid, {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 1000 * 60 * 60 * 24 * 365 * 2 // 2 года
+    });
+  }
+  req.bid = bid;
+  next();
+});
 
-Ты AI Video Mentor — помощник учеников онлайн-курса по созданию AI-видео.
-
-Твоя задача — помогать ученикам с вопросами по курсу.
-
-ВАЖНЫЕ ПРАВИЛА ОТВЕТА:
-
-Отвечай как обычный человек в чате.
-
-Запрещено:
-- использовать Markdown
-- использовать символы *
-- использовать **
-- использовать #
-- использовать списки
-- использовать заголовки
-- писать длинные статьи
-
-Не оформляй текст.
-Пиши обычными короткими абзацами.
-
-Максимальная длина ответа:
-5-6 предложений.
-
-Если вопрос простой — отвечай коротко.
-
-
-Информация о курсе:
-
-Курс обучает созданию AI-видео с нуля.
-
-Ученики изучают:
-
-Создание идей и сценариев.
-Разработку промптов.
-Работу с AI-инструментами.
-Создание изображений и видео.
-Монтаж готовых роликов.
-Использование AI для заработка.
-
-
-Инструменты курса:
-
-Veo.
-Kling.
-Runway.
-Midjourney.
-ChatGPT.
-
-
-Темы обучения:
-
-Создание сценариев.
-Раскадровка.
-Написание промптов.
-Работа с камерой и движением.
-Создание реалистичных сцен.
-Монтаж AI-видео.
-Создание коммерческого контента.
-
-
-Тарифы:
-
-Базовый тариф:
-Полный доступ ко всем урокам.
-Все материалы курса.
-Доступ навсегда.
-
-
-Тариф с поддержкой:
-Все уроки.
-Помощь преподавателя.
-Разбор вопросов.
-Помощь с промптами.
-Сертификат.
-
-
-FAQ:
-
-Опыт не требуется.
-Курс подходит новичкам.
-Нужен компьютер и интернет.
-Доступ открывается сразу после оплаты.
-Учиться можно в удобном темпе.
-Есть практические задания.
-
-
-Правила общения:
-
-Не придумывай информацию, которой нет в базе.
-
-Если ответа нет, напиши:
-"Я не нашёл этой информации в программе курса. Могу помочь с вопросами про обучение, AI-инструменты или создание видео."
-
-
-`;
-
-
-// Убираем Markdown и лишние символы
-function cleanAnswer(text){
-
-return text
-.replace(/\*\*\*/g,"")
-.replace(/\*\*/g,"")
-.replace(/\*/g,"")
-.replace(/###/g,"")
-.replace(/##/g,"")
-.replace(/#/g,"")
-.replace(/---/g,"")
-.replace(/_/g,"")
-.replace(/`/g,"")
-.trim();
-
+function ownerFor(req, shared) {
+  return shared ? '' : req.bid;
 }
 
+// ---- KV API, повторяет семантику window.storage ----
 
-
-app.post("/mentor", async(req,res)=>{
-
-try{
-
-
-const userMessage = req.body.message;
-
-
-if(!userMessage){
-
-return res.json({
-answer:"Напишите вопрос, и я помогу разобраться."
+app.post('/api/kv/get', async (req, res) => {
+  try {
+    const { key, shared } = req.body;
+    const owner = ownerFor(req, !!shared);
+    const r = await pool.query(
+      'SELECT value FROM kv_store WHERE k=$1 AND shared=$2 AND owner=$3',
+      [key, !!shared, owner]
+    );
+    if (r.rows.length === 0) return res.json({ result: null });
+    res.json({ result: { key, value: r.rows[0].value, shared: !!shared } });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'db_error' });
+  }
 });
 
-}
-
-
-
-const response = await client.chat.completions.create({
-
-model:"meta-llama/llama-3.1-8b-instruct:free",
-
-temperature:0.2,
-
-max_tokens:250,
-
-
-extra_headers:{
-"HTTP-Referer":"http://localhost:3000",
-"X-Title":"AI Video Mentor"
-},
-
-
-messages:[
-
-{
-role:"system",
-content:SITE_INFO
-},
-
-{
-role:"user",
-content:userMessage
-}
-
-]
-
-
+app.post('/api/kv/set', async (req, res) => {
+  try {
+    const { key, value, shared } = req.body;
+    const owner = ownerFor(req, !!shared);
+    await pool.query(
+      `INSERT INTO kv_store (k, shared, owner, value, updated_at)
+       VALUES ($1,$2,$3,$4, now())
+       ON CONFLICT (k, shared, owner)
+       DO UPDATE SET value=$4, updated_at=now()`,
+      [key, !!shared, owner, value]
+    );
+    res.json({ result: { key, value, shared: !!shared } });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'db_error' });
+  }
 });
 
-
-
-let answer = response
-.choices[0]
-.message
-.content;
-
-
-res.json({
-
-answer:cleanAnswer(answer)
-
+app.post('/api/kv/delete', async (req, res) => {
+  try {
+    const { key, shared } = req.body;
+    const owner = ownerFor(req, !!shared);
+    await pool.query(
+      'DELETE FROM kv_store WHERE k=$1 AND shared=$2 AND owner=$3',
+      [key, !!shared, owner]
+    );
+    res.json({ result: { key, deleted: true, shared: !!shared } });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'db_error' });
+  }
 });
 
-
-
-}catch(e){
-
-
-console.log("AI ERROR:");
-console.log(e.message);
-
-
-res.status(500).json({
-
-answer:"Произошла ошибка AI. Попробуйте ещё раз."
-
+app.post('/api/kv/list', async (req, res) => {
+  try {
+    const { prefix, shared } = req.body;
+    const owner = ownerFor(req, !!shared);
+    const r = await pool.query(
+      'SELECT k FROM kv_store WHERE shared=$1 AND owner=$2 AND k LIKE $3',
+      [!!shared, owner, (prefix || '') + '%']
+    );
+    res.json({ result: { keys: r.rows.map(row => row.k), prefix: prefix || '', shared: !!shared } });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'db_error' });
+  }
 });
 
-
-}
-
-
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-
-
-app.listen(3000,()=>{
-
-console.log("AI Mentor работает");
-
-});
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log('Server running on port ' + PORT));
