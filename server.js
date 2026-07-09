@@ -1,4 +1,4 @@
-require('dotenv').config(); // локально подхватит .env; на Railway переменные придут из Variables и это просто ничего не сделает
+require('dotenv').config();
 
 const express = require('express');
 const cookieParser = require('cookie-parser');
@@ -9,7 +9,7 @@ const session = require('express-session');
 const pgSession = require('connect-pg-simple')(session);
 
 const app = express();
-app.set('trust proxy', 1); // Railway стоит за прокси, без этого secure-куки не работают
+app.set('trust proxy', 1);
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -17,10 +17,9 @@ const pool = new Pool({
 });
 
 if (!process.env.SESSION_SECRET) {
-  console.warn('ВНИМАНИЕ: SESSION_SECRET не задан в переменных окружения — задайте его в Railway Variables!');
+  console.warn('ВНИМАНИЕ: SESSION_SECRET не задан!');
 }
 
-// Сессии через Postgres (переживают рестарт сервиса)
 app.use(session({
   store: new pgSession({
     pool,
@@ -34,15 +33,114 @@ app.use(session({
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
-    maxAge: 1000 * 60 * 60 * 24 * 30 // 30 дней
+    maxAge: 1000 * 60 * 60 * 24 * 30
   }
 }));
 
+// ВАЖНО: webhook роут должен получать RAW body — регистрируем ДО express.json()
+app.post('/api/payment/webhook', express.raw({ type: '*/*' }), async (req, res) => {
+  try {
+    const body = req.body.toString();
+    let data;
+    try { data = JSON.parse(body); } catch { return res.sendStatus(400); }
+
+    // Проверяем подпись от LavaPay
+    const expectedSign = crypto
+      .createHmac('sha256', process.env.LAVA_API_KEY || '')
+      .update(body)
+      .digest('hex');
+
+    const receivedSign = req.headers['x-signature'] || req.headers['signature'] || '';
+
+    if (expectedSign !== receivedSign) {
+      console.warn('LavaPay webhook: неверная подпись!', { expectedSign, receivedSign });
+      // В тестовом режиме можно закомментировать строку ниже:
+      return res.sendStatus(403);
+    }
+
+    console.log('LavaPay webhook получен:', JSON.stringify(data));
+
+    // Обрабатываем только успешные оплаты
+    if (data.status !== 'success') {
+      console.log('Статус не success, пропускаем:', data.status);
+      return res.sendStatus(200);
+    }
+
+    // orderId формат: "email_plan_timestamp", например "user@mail.com_premium_1717000000000"
+    const orderId = data.orderId || data.order_id || '';
+    const parts = orderId.split('_');
+    if (parts.length < 3) {
+      console.error('Неверный формат orderId:', orderId);
+      return res.sendStatus(200);
+    }
+
+    const plan = parts[parts.length - 2];       // "basic" или "premium"
+    const email = parts.slice(0, parts.length - 2).join('_'); // всё до плана
+
+    if (!['basic', 'premium'].includes(plan)) {
+      console.error('Неизвестный план:', plan);
+      return res.sendStatus(200);
+    }
+
+    // Достаём пользователя из KV (Postgres)
+    const kvGet = await pool.query(
+      'SELECT value FROM kv_store WHERE k=$1 AND shared=$2 AND owner=$3',
+      [`user:${email.toLowerCase()}`, true, '']
+    );
+
+    if (kvGet.rows.length === 0) {
+      console.error('Пользователь не найден в KV:', email);
+      return res.sendStatus(200);
+    }
+
+    const user = JSON.parse(kvGet.rows[0].value);
+    user.plan = plan;
+    user.paidAt = Date.now();
+    user.paymentId = data.id || data.invoice_id || null;
+
+    // Реферальная комиссия: если юзер пришёл по рефке — начисляем 30% рефереру
+    if (user.referredBy && !user.refCommissionPaid) {
+      const prices = { basic: 990, premium: 1990 };
+      const commission = Math.round((prices[plan] || 0) * 0.3);
+      const refGet = await pool.query(
+        `SELECT value FROM kv_store WHERE k LIKE 'user:%' AND shared=true AND owner='' AND value LIKE $1`,
+        [`%"refCode":"${user.referredBy}"%`]
+      );
+      if (refGet.rows.length > 0) {
+        const referrer = JSON.parse(refGet.rows[0].value);
+        const refEmail = referrer.email;
+        referrer.balance = (referrer.balance || 0) + commission;
+        await pool.query(
+          `INSERT INTO kv_store (k, shared, owner, value, updated_at) VALUES ($1,$2,$3,$4,now())
+           ON CONFLICT (k, shared, owner) DO UPDATE SET value=$4, updated_at=now()`,
+          [`user:${refEmail.toLowerCase()}`, true, '', JSON.stringify(referrer)]
+        );
+        console.log(`Реферальная комиссия ${commission}₽ начислена рефереру ${refEmail}`);
+      }
+      user.refCommissionPaid = true;
+    }
+
+    // Сохраняем обновлённого пользователя
+    await pool.query(
+      `INSERT INTO kv_store (k, shared, owner, value, updated_at) VALUES ($1,$2,$3,$4,now())
+       ON CONFLICT (k, shared, owner) DO UPDATE SET value=$4, updated_at=now()`,
+      [`user:${email.toLowerCase()}`, true, '', JSON.stringify(user)]
+    );
+
+    console.log(`✅ Доступ "${plan}" выдан пользователю ${email}`);
+    res.sendStatus(200);
+
+  } catch (e) {
+    console.error('Ошибка обработки webhook:', e);
+    res.sendStatus(500);
+  }
+});
+
+// Теперь подключаем json-парсер для всех остальных роутов
 app.use(express.json({ limit: '2mb' }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Создаём таблицу при старте
 async function initDb() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS kv_store (
@@ -58,7 +156,6 @@ async function initDb() {
 }
 initDb().catch(e => { console.error('DB init failed:', e); process.exit(1); });
 
-// Middleware: browser id в httpOnly-куке для персональных (не shared) данных
 app.use((req, res, next) => {
   let bid = req.cookies.bid;
   if (!bid) {
@@ -67,7 +164,7 @@ app.use((req, res, next) => {
       httpOnly: true,
       sameSite: 'lax',
       secure: process.env.NODE_ENV === 'production',
-      maxAge: 1000 * 60 * 60 * 24 * 365 * 2 // 2 года
+      maxAge: 1000 * 60 * 60 * 24 * 365 * 2
     });
   }
   req.bid = bid;
@@ -78,7 +175,6 @@ function ownerFor(req, shared) {
   return shared ? '' : req.bid;
 }
 
-// ---- health check (удобно проверять что сервис жив) ----
 app.get('/health', (req, res) => res.json({ ok: true }));
 
 // ---- KV API ----
@@ -147,7 +243,65 @@ app.post('/api/kv/list', async (req, res) => {
   }
 });
 
-// ---- AI Video Mentor (ключ Anthropic хранится только на сервере) ----
+// ---- Создание счёта LavaPay ----
+app.post('/api/payment/create', async (req, res) => {
+  try {
+    const { email, plan } = req.body || {};
+    const prices = { basic: 990, premium: 1990 };
+    const amount = prices[plan];
+
+    if (!amount || !email) {
+      return res.status(400).json({ error: 'Укажите email и план' });
+    }
+    if (!process.env.LAVA_API_KEY || !process.env.LAVA_SHOP_ID) {
+      return res.status(500).json({ error: 'Платёжная система не настроена' });
+    }
+
+    // orderId: "email_plan_timestamp" — по нему в webhook достанем кому выдать доступ
+    const orderId = `${email}_${plan}_${Date.now()}`;
+    const host = process.env.SITE_URL || `https://${req.headers.host}`;
+
+    const body = {
+      sum: amount,
+      shopId: process.env.LAVA_SHOP_ID,
+      orderId: orderId,
+      hookUrl: `${host}/api/payment/webhook`,
+      successUrl: `${host}/api/payment/success?order=${encodeURIComponent(orderId)}`,
+      failUrl: host,
+      comment: `Нейровидео — тариф «${plan === 'premium' ? 'С поддержкой' : 'Самостоятельно'}»`,
+      currency: 'RUB',
+    };
+
+    const response = await fetch('https://api.lava.ru/business/invoice/create', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Api-Key': process.env.LAVA_API_KEY,
+      },
+      body: JSON.stringify(body),
+    });
+
+    const data = await response.json();
+    console.log('LavaPay create response:', JSON.stringify(data));
+
+    if (data.data?.url) {
+      res.json({ url: data.data.url });
+    } else {
+      res.status(500).json({ error: data.error || 'Не удалось создать счёт', raw: data });
+    }
+  } catch (e) {
+    console.error('payment create error:', e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ---- Редирект после успешной оплаты ----
+app.get('/api/payment/success', (req, res) => {
+  // Редирект на фронт с флагом — JS покажет toast и обновит данные юзера
+  res.redirect('/?paid=1');
+});
+
+// ---- AI Video Mentor ----
 app.post('/api/mentor', async (req, res) => {
   try {
     const { message } = req.body || {};
@@ -179,7 +333,7 @@ app.post('/api/mentor', async (req, res) => {
   }
 });
 
-// SPA fallback — любой GET, не подошедший под статику и API, отдаёт index.html
+// SPA fallback
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });

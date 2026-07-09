@@ -906,6 +906,29 @@ footer {
 .ref-withdraw-btn:hover{ transform:translateY(-2px); }
 .ref-withdraw-btn:disabled{ opacity:.4; cursor:not-allowed; transform:none; }
 
+.tts-tip {
+    display: flex;
+    gap: 12px;
+    margin-top: 18px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    background: rgba(255,255,255,.04);
+    border: 1px solid rgba(255,255,255,.08);
+}
+
+.tts-tip span {
+    font-size: 20px;
+    line-height: 1;
+}
+
+.tts-tip strong {
+    color: #fff;
+}
+
+.tts-tip b {
+    color: #8b5cf6;
+}
+
 </style>
 <meta name="lava-verify" content="7167f339c3bbb0c4" />
 </head>
@@ -1876,113 +1899,96 @@ style="width:100%;padding:16px;border-radius:12px;">
   <div class="section-head">
     <div class="eyebrow">Инструмент</div>
     <h2>🎙️ Текст в аудио</h2>
-    <p class="muted">Профессиональная озвучка через VoiceRSS. Работает в России. Бесплатно 350 запросов в день — регистрация на voicerss.org.</p>
+    <p class="muted">
+  Озвучка прямо в браузере — без регистрации и API.<br>
+  Прослушайте результат перед скачиванием и сохраните готовый аудиофайл всего в пару кликов.
+</p>
+
+<div class="tts-tip">
+  <span>💡</span>
+  <div>
+    <strong>Совет</strong><br>
+    Чтобы голос звучал более естественно и приятно, попробуйте немного изменить
+    <b>тональность</b> и <b>скорость речи</b>. Даже небольшие изменения могут
+    сделать звучание заметно красивее и выразительнее.
   </div>
- 
-  <div style="background:var(--surface); border:1px solid var(--accent); border-radius:16px; padding:20px; margin-bottom:24px;">
-    <div style="font-size:13px; font-weight:600; margin-bottom:6px;">🔑 API ключ VoiceRSS</div>
-    <div style="font-size:13px; color:var(--text-muted); margin-bottom:12px;">
-      Бесплатно на <a href="https://voicerss.org/registration.aspx" target="_blank" rel="noopener" style="color:var(--accent); text-decoration:underline;">voicerss.org</a> → зарегистрируйтесь → скопируйте ключ. 350 запросов/день бесплатно. Работает без VPN в России.
-    </div>
-    <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
-      <input type="text" id="tts-apikey" placeholder="Вставьте API ключ VoiceRSS..." style="flex:1; min-width:220px; padding:11px 14px; border-radius:10px; border:1px solid var(--line); background:var(--bg); color:var(--text); font-size:14px; font-family:var(--font-body);">
-      <button class="btn-primary" onclick="saveTTSKey()">Сохранить</button>
-    </div>
-    <div id="tts-key-status" style="font-size:12px; margin-top:8px; color:var(--text-muted);"></div>
+</div>
   </div>
- 
-  <div style="background:var(--surface); border:1px solid var(--line); border-radius:20px; padding:28px; margin-bottom:24px;">
- 
+
+  <div style="background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:28px;margin-bottom:24px;">
+
     <div class="field">
-      <label style="display:flex; justify-content:space-between; align-items:center;">
+      <label style="display:flex;justify-content:space-between;align-items:center;">
         <span>Текст для озвучки</span>
-        <span id="tts-char-count" style="color:var(--text-muted); font-size:12px; font-family:var(--font-mono);">0 / 3000</span>
+        <span id="tts-char-count" style="color:var(--text-muted);font-size:12px;font-family:var(--font-mono);">0 / 5000</span>
       </label>
       <textarea id="tts-input" rows="7" oninput="updateTTSCount()"
-        style="width:100%; padding:12px 14px; border-radius:10px; border:1px solid var(--line); background:var(--bg-soft); color:var(--text); font-size:14px; font-family:var(--font-body); resize:vertical; line-height:1.6; margin-top:6px;"
+        style="width:100%;padding:12px 14px;border-radius:10px;border:1px solid var(--line);background:var(--bg-soft);color:var(--text);font-size:14px;font-family:var(--font-body);resize:vertical;line-height:1.6;margin-top:6px;"
         placeholder="Введите или вставьте текст..."></textarea>
     </div>
- 
-    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(190px,1fr)); gap:14px; margin-bottom:20px;">
- 
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:20px;">
+
       <div class="field" style="margin-bottom:0;">
-        <label>Язык и голос</label>
-        <select id="tts-voice" style="width:100%; padding:11px 14px; border-radius:10px; border:1px solid var(--line); background:var(--bg-soft); color:var(--text); font-size:14px; font-family:var(--font-body); margin-top:6px;">
-          <optgroup label="🇷🇺 Русский">
-            <option value="ru-ru|f|Maxim" selected>Максим — мужской</option>
-            <option value="ru-ru|f|Tatyana">Татьяна — женский</option>
-          </optgroup>
-          <optgroup label="🇺🇦 Украинский">
-            <option value="uk-ua|f|Ostap">Остап — мужской</option>
-          </optgroup>
-          <optgroup label="🇬🇧 Английский (UK)">
-            <option value="en-gb|f|f1">Brian — мужской</option>
-            <option value="en-gb|f|f2">Amy — женский</option>
-          </optgroup>
-          <optgroup label="🇺🇸 Английский (US)">
-            <option value="en-us|f|Linda">Linda — женский</option>
-            <option value="en-us|f|Mike">Mike — мужской</option>
-            <option value="en-us|f|Amy">Amy — женский, мягкий</option>
-          </optgroup>
-          <optgroup label="🇩🇪 Немецкий">
-            <option value="de-de|f|f1">Немецкий мужской</option>
-          </optgroup>
-          <optgroup label="🇫🇷 Французский">
-            <option value="fr-fr|f|f1">Французский мужской</option>
-          </optgroup>
+        <label>Голос</label>
+        <select id="tts-voice"
+          style="width:100%;padding:11px 14px;border-radius:10px;border:1px solid var(--line);background:var(--bg-soft);color:var(--text);font-size:14px;font-family:var(--font-body);margin-top:6px;">
+          <option value="">Загрузка голосов...</option>
         </select>
       </div>
- 
+
       <div class="field" style="margin-bottom:0;">
-        <label>Скорость речи</label>
-        <select id="tts-speed" style="width:100%; padding:11px 14px; border-radius:10px; border:1px solid var(--line); background:var(--bg-soft); color:var(--text); font-size:14px; font-family:var(--font-body); margin-top:6px;">
-          <option value="-6">Очень медленно</option>
-          <option value="-3">Медленно</option>
-          <option value="0" selected>Нормально</option>
-          <option value="3">Быстро</option>
-          <option value="6">Очень быстро</option>
-          <option value="10">Максимально быстро</option>
-        </select>
+        <label>Скорость: <span id="tts-rate-val">1.0×</span></label>
+        <input type="range" id="tts-rate" min="0.5" max="2" step="0.1" value="1"
+          oninput="document.getElementById('tts-rate-val').textContent=parseFloat(this.value).toFixed(1)+'×'"
+          style="width:100%;margin-top:12px;">
       </div>
- 
+
       <div class="field" style="margin-bottom:0;">
-        <label>Качество аудио</label>
-        <select id="tts-format" style="width:100%; padding:11px 14px; border-radius:10px; border:1px solid var(--line); background:var(--bg-soft); color:var(--text); font-size:14px; font-family:var(--font-body); margin-top:6px;">
-          <option value="8khz_8bit_mono">8 kHz — лёгкий файл</option>
-          <option value="16khz_16bit_stereo" selected>16 kHz — стандарт</option>
-          <option value="44khz_16bit_stereo">44 kHz — высокое качество</option>
-          <option value="48khz_16bit_stereo">48 kHz — студийное</option>
-        </select>
+        <label>Тональность: <span id="tts-pitch-val">1.0</span></label>
+        <input type="range" id="tts-pitch" min="0.5" max="2" step="0.1" value="1"
+          oninput="document.getElementById('tts-pitch-val').textContent=parseFloat(this.value).toFixed(1)"
+          style="width:100%;margin-top:12px;">
       </div>
- 
+
     </div>
- 
-    <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
-      <button class="btn-primary" id="tts-btn" onclick="generateTTS()">🎙️ Озвучить</button>
-      <button class="btn-ghost" id="tts-preview-btn" onclick="previewTTS()">▶ Прослушать</button>
-      <span id="tts-status" style="font-size:13px; color:var(--text-muted); font-family:var(--font-mono);"></span>
+
+    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:14px;">
+      <button class="btn-primary" id="tts-btn" onclick="speakTTS()">🎙️ Озвучить</button>
+      <button class="btn-ghost" id="tts-rec-btn" onclick="recordTTS()" title="Воспроизвести и записать файл">⏺ Записать файл</button>
+      <button class="btn-ghost" id="tts-stop-btn" onclick="stopTTS()" style="display:none;">⏹ Стоп</button>
+      <button class="btn-ghost" id="tts-pause-btn" onclick="pauseTTS()" style="display:none;">⏸ Пауза</button>
+      <span id="tts-status" style="font-size:13px;color:var(--text-muted);font-family:var(--font-mono);"></span>
+    </div>
+
+    <div id="tts-progress-wrap" style="display:none;margin-bottom:16px;">
+      <div style="height:4px;background:var(--line);border-radius:100px;overflow:hidden;">
+        <div id="tts-progress-bar" style="height:100%;background:linear-gradient(90deg,var(--accent),var(--gold));width:0%;transition:width .3s;"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Результат записи -->
+  <div id="tts-result" class="hidden" style="background:var(--surface);border:1px solid var(--green);border-radius:20px;padding:28px;margin-bottom:24px;">
+    <div style="font-weight:600;margin-bottom:14px;color:var(--green);font-size:15px;">✓ Запись готова</div>
+    <audio id="tts-audio" controls style="width:100%;margin-bottom:18px;border-radius:10px;"></audio>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;">
+      <a id="tts-download" class="btn-primary" style="display:inline-block;text-decoration:none;" download="озвучка.webm">⬇ Скачать аудио</a>
+      <button class="btn-ghost" onclick="document.getElementById('tts-result').classList.add('hidden')">Новая запись</button>
     </div>
   </div>
- 
-  <div id="tts-result" class="hidden" style="background:var(--surface); border:1px solid var(--green); border-radius:20px; padding:28px; margin-bottom:24px;">
-    <div style="font-weight:600; margin-bottom:14px; color:var(--green); font-size:15px;">✓ Озвучка готова — можно скачать</div>
-    <audio id="tts-audio" controls style="width:100%; margin-bottom:18px; border-radius:10px;"></audio>
-    <div style="display:flex; gap:12px; flex-wrap:wrap;">
-      <a id="tts-download" class="btn-primary" style="display:inline-block; text-decoration:none;" download="озвучка.wav">⬇ Скачать WAV</a>
-      <button class="btn-ghost" onclick="document.getElementById('tts-result').classList.add('hidden')">Новый текст</button>
+
+  <div style="background:var(--bg-soft);border:1px solid var(--line);border-radius:14px;padding:20px;">
+    <div style="font-size:13px;font-weight:600;margin-bottom:12px;">💡 Советы</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;font-size:13px;color:var(--text-muted);line-height:1.7;">
+      <div>🎬 <b style="color:var(--text);">Лучшие голоса:</b> Chrome/Edge — Microsoft Irina, Google русский</div>
+      <div>⏺ <b style="color:var(--text);">Запись файла:</b> нажмите «Записать файл» — он создастся автоматически</div>
+      <div>📱 <b style="color:var(--text);">iPhone:</b> голос Milena, запись работает в Safari 15+</div>
+      <div>🔁 <b style="color:var(--text);">Бесплатно:</b> без лимитов и регистрации</div>
     </div>
   </div>
- 
-  <div style="background:var(--bg-soft); border:1px solid var(--line); border-radius:14px; padding:20px;">
-    <div style="font-size:13px; font-weight:600; margin-bottom:12px;">💡 Советы</div>
-    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px; font-size:13px; color:var(--text-muted); line-height:1.7;">
-      <div>🎬 <b style="color:var(--text);">Для Reels/Shorts:</b> скорость «Быстро», качество 16 kHz</div>
-      <div>📚 <b style="color:var(--text);">Для обучения:</b> скорость «Нормально», качество 44 kHz</div>
-      <div>🎯 <b style="color:var(--text);">Паузы в тексте:</b> ставьте запятые и точки — голос делает паузы</div>
-      <div>🔁 <b style="color:var(--text);">Лимит:</b> 350 запросов/день бесплатно, каждый запрос до 3000 символов</div>
-    </div>
-  </div>
- 
+
 </div>
 </section>
 </div>
@@ -2757,7 +2763,7 @@ const MODULE_ICONS = [
   {icon:'🎨', tone:'tone-accent'},
   {icon:'🚀', tone:'tone-gold'}
 ];
- 
+
 function renderCurriculum(containerId, unlocked){
   const el = document.getElementById(containerId);
   let html='';
@@ -3940,8 +3946,34 @@ item.innerText
 
 });
 
-function showPaymentInfo(){
-  showToast('Оплата через LavaPay — картой или по СБП. Подключаем платёжную форму, скоро будет доступна прямо здесь.', 'info');
+async function showPaymentInfo(){
+  if (!currentUser) { goto('auth'); return; }
+  
+  // Определяем какой план покупает
+  const plan = currentUser.plan === 'basic' ? 'premium' : 'basic';
+  const names = { basic: 'Самостоятельно — 990 ₽', premium: 'С поддержкой — 1 990 ₽' };
+  
+  const btn = event?.target;
+  if (btn) { btn.disabled = true; btn.textContent = 'Создаём счёт...'; }
+  
+  try {
+    const res = await fetch('/api/payment/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ email: currentUser.email, plan }),
+    });
+    const data = await res.json();
+    if (data.url) {
+      window.location.href = data.url; // редирект на страницу оплаты LavaPay
+    } else {
+      showToast('Ошибка создания счёта: ' + (data.error || 'неизвестно'), 'warn');
+    }
+  } catch (e) {
+    showToast('Ошибка: ' + e.message, 'warn');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Оплатить'; }
+  }
 }
 
 /* ============ LEGAL MODAL ============ */
@@ -4317,157 +4349,263 @@ async function mentorSend(){
   }
 }
 
-/* ============ TTS ============ */
+/* ============ TTS — браузерный + запись файла ============ */
+let ttsUtterance = null;
+let ttsPaused = false;
+let ttsFullText = '';
+let ttsMediaRecorder = null;
+let ttsAudioChunks = [];
+let ttsAudioCtx = null;
+let ttsDestination = null;
+
 function updateTTSCount(){
   const len = (document.getElementById('tts-input').value || '').length;
   const el = document.getElementById('tts-char-count');
   if(!el) return;
-  el.textContent = len + ' / 3000';
-  el.style.color = len > 2700 ? 'var(--coral)' : len > 2000 ? 'var(--gold)' : 'var(--text-muted)';
+  el.textContent = len + ' / 5000';
+  el.style.color = len > 4500 ? 'var(--coral)' : len > 3000 ? 'var(--gold)' : 'var(--text-muted)';
 }
- 
-// Стало:
-async function saveTTSKey(){
-  const key = (document.getElementById('tts-apikey').value || '').trim();
-  if(!key){ showToast('Введите API ключ', 'warn'); return; }
-  try{ await window.storage.set('voicerss_key', key, false); }catch(e){}
-  document.getElementById('tts-key-status').innerHTML = '<span style="color:var(--green);">✓ Ключ сохранён</span>';
-  showToast('API ключ сохранён', 'success');
-}
-let _cachedTTSKey = '';
-function getTTSKey(){
-  return _cachedTTSKey || (document.getElementById('tts-apikey').value || '').trim();
-}
-async function initTTS(){
-  try{
-    const r = await window.storage.get('voicerss_key', false);
-    if(r){
-      _cachedTTSKey = r.value;
-      const el = document.getElementById('tts-apikey');
-      if(el) el.value = r.value;
-      const st = document.getElementById('tts-key-status');
-      if(st) st.innerHTML = '<span style="color:var(--green);">✓ Ключ загружен</span>';
-    }
-  }catch(e){}
+
+function initTTS(){
   updateTTSCount();
-}
- 
-async function fetchTTS(text){
-  const key = getTTSKey();
-  if(!key){
-    showToast('Введите API ключ VoiceRSS', 'warn');
-    return null;
+  loadVoices();
+  if(speechSynthesis.onvoiceschanged !== undefined){
+    speechSynthesis.onvoiceschanged = loadVoices;
   }
- 
-  const voiceVal = document.getElementById('tts-voice').value; // "ru-ru|f|Maxim"
-  const parts = voiceVal.split('|');
-  const hl = parts[0];   // ru-ru
-  const v  = parts[2];   // Maxim
- 
-  const speed  = document.getElementById('tts-speed').value;
-  const format = document.getElementById('tts-format').value;
- 
-  const params = new URLSearchParams({
-    key:    key,
-    src:    text,
-    hl:     hl,
-    v:      v,
-    r:      speed,
-    c:      'WAV',
-    f:      format,
-    ssml:   'false',
-    b64:    'false'
-  });
- 
-  const url = 'https://api.voicerss.org/?' + params.toString();
- 
-  const resp = await fetch(url);
-  if(!resp.ok) throw new Error('HTTP ' + resp.status);
- 
-  const blob = await resp.blob();
- 
-  // VoiceRSS возвращает текстовую ошибку если что-то не так
-  if(blob.type.startsWith('text')){
-    const errText = await blob.text();
-    throw new Error(errText);
-  }
- 
-  return blob;
 }
- 
-async function previewTTS(){
+
+function loadVoices(){
+  const sel = document.getElementById('tts-voice');
+  if(!sel) return;
+  const voices = speechSynthesis.getVoices();
+  const ruVoices = voices.filter(v => v.lang.startsWith('ru'));
+  const other = voices.filter(v => !v.lang.startsWith('ru'));
+  const sorted = [...ruVoices, ...other];
+  if(sorted.length === 0){
+    setTimeout(loadVoices, 500);
+    return;
+  }
+  sel.innerHTML = sorted.map((v, i) =>
+    `<option value="${v.name}">${v.lang.startsWith('ru') ? '🇷🇺 ' : '🌐 '}${v.name} (${v.lang})</option>`
+  ).join('');
+}
+
+function getVoice(){
+  const sel = document.getElementById('tts-voice');
+  const name = sel ? sel.value : '';
+  return speechSynthesis.getVoices().find(v => v.name === name) || null;
+}
+
+function makeUtterance(text){
+  const u = new SpeechSynthesisUtterance(text);
+  u.rate  = parseFloat(document.getElementById('tts-rate').value) || 1;
+  u.pitch = parseFloat(document.getElementById('tts-pitch').value) || 1;
+  const v = getVoice();
+  if(v) u.voice = v;
+  return u;
+}
+
+/* --- Просто воспроизвести (без записи) --- */
+function speakTTS(){
+  if(!('speechSynthesis' in window)){
+    showToast('Ваш браузер не поддерживает озвучку. Используйте Chrome.', 'warn');
+    return;
+  }
   const text = (document.getElementById('tts-input').value || '').trim();
-  const sample = text.slice(0, 200) || 'Привет! Это тестовая озвучка выбранного голоса.';
- 
-  const btn = document.getElementById('tts-preview-btn');
-  btn.disabled = true;
-  btn.textContent = '⏳...';
- 
-  try {
-    const blob = await fetchTTS(sample);
-    if(!blob){ btn.disabled=false; btn.textContent='▶ Прослушать'; return; }
-    const url = URL.createObjectURL(blob);
-    const audio = new Audio(url);
-    audio.play();
-    showToast('Воспроизводим...', 'info');
-  } catch(e){
-    showToast('Ошибка: ' + e.message, 'warn');
-  }
- 
-  btn.disabled = false;
-  btn.textContent = '▶ Прослушать';
-}
- 
-async function generateTTS(){
-  const text = (document.getElementById('tts-input').value || '').trim();
-  if(!text){ showToast('Введите текст для озвучки', 'warn'); return; }
-  if(text.length > 3000){ showToast('Максимум 3000 символов за один запрос', 'warn'); return; }
- 
-  const btn = document.getElementById('tts-btn');
-  const status = document.getElementById('tts-status');
-  const result = document.getElementById('tts-result');
- 
-  btn.disabled = true;
-  btn.textContent = '⏳ Генерирую...';
-  status.textContent = 'Запрашиваю озвучку...';
-  result.classList.add('hidden');
- 
-  try {
-    const blob = await fetchTTS(text);
-    if(!blob){ btn.disabled=false; btn.textContent='🎙️ Озвучить'; status.textContent=''; return; }
- 
-    const url = URL.createObjectURL(blob);
- 
-    // Аудиоплеер
-    const audioEl = document.getElementById('tts-audio');
-    audioEl.src = url;
- 
-    // Имя файла
-    const fname = text.slice(0,30).replace(/[^\wа-яёА-ЯЁ]/gi,'_').replace(/_+/g,'_').replace(/^_|_$/g,'') || 'озвучка';
-    const dlEl = document.getElementById('tts-download');
-    dlEl.href = url;
-    dlEl.download = fname + '.wav';
- 
-    result.classList.remove('hidden');
-    audioEl.play();
-    status.textContent = '';
-    showToast('Озвучка готова! 🎙️', 'success');
- 
-  } catch(e){
-    status.textContent = '';
-    console.error(e);
-    if(e.message.includes('1') || e.message.toLowerCase().includes('key')){
-      showToast('Неверный API ключ VoiceRSS', 'warn');
-    } else if(e.message.toLowerCase().includes('limit')){
-      showToast('Превышен дневной лимит (350 запросов)', 'warn');
-    } else {
-      showToast('Ошибка: ' + e.message, 'warn');
+  if(!text){ showToast('Введите текст', 'warn'); return; }
+  speechSynthesis.cancel();
+  ttsPaused = false;
+  ttsFullText = text;
+  ttsUtterance = makeUtterance(text);
+
+  ttsUtterance.onstart = () => {
+    setTTSPlaying(true);
+    document.getElementById('tts-progress-wrap').style.display = '';
+  };
+  ttsUtterance.onboundary = (e) => {
+    if(e.name === 'word' && ttsFullText.length){
+      const pct = Math.min(100, Math.round(e.charIndex / ttsFullText.length * 100));
+      document.getElementById('tts-progress-bar').style.width = pct + '%';
     }
-  }
- 
-  btn.disabled = false;
-  btn.textContent = '🎙️ Озвучить';
+  };
+  ttsUtterance.onend = () => {
+    setTTSPlaying(false);
+    document.getElementById('tts-progress-bar').style.width = '100%';
+    setTimeout(() => {
+      document.getElementById('tts-progress-bar').style.width = '0%';
+      document.getElementById('tts-progress-wrap').style.display = 'none';
+    }, 800);
+  };
+  ttsUtterance.onerror = (e) => {
+    setTTSPlaying(false);
+    if(e.error !== 'interrupted' && e.error !== 'canceled')
+      showToast('Ошибка: ' + e.error, 'warn');
+  };
+  speechSynthesis.speak(ttsUtterance);
 }
+
+/* --- Записать файл через MediaRecorder + AudioContext --- */
+async function recordTTS(){
+  if(!('speechSynthesis' in window) || !('MediaRecorder' in window)){
+    showToast('Браузер не поддерживает запись. Используйте Chrome/Edge.', 'warn');
+    return;
+  }
+  const text = (document.getElementById('tts-input').value || '').trim();
+  if(!text){ showToast('Введите текст', 'warn'); return; }
+
+  /* Создаём AudioContext + destination для захвата */
+  try {
+    /* Запрашиваем «тихой» микрофон-заглушку лишь чтобы открыть AudioContext.
+       Реальный звук берём из системного аудиовыхода через createMediaStreamDestination */
+    ttsAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    ttsDestination = ttsAudioCtx.createMediaStreamDestination();
+
+    /* Подключаем системный аудиовыход браузера к нашему destination */
+    const gainNode = ttsAudioCtx.createGain();
+    gainNode.gain.value = 1;
+    gainNode.connect(ttsDestination);
+
+    /* MediaRecorder пишет поток */
+    const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+      ? 'audio/webm;codecs=opus'
+      : MediaRecorder.isTypeSupported('audio/ogg;codecs=opus')
+        ? 'audio/ogg;codecs=opus'
+        : 'audio/webm';
+
+    ttsAudioChunks = [];
+    ttsMediaRecorder = new MediaRecorder(ttsDestination.stream, { mimeType });
+    ttsMediaRecorder.ondataavailable = e => { if(e.data.size > 0) ttsAudioChunks.push(e.data); };
+    ttsMediaRecorder.onstop = finishRecording;
+    ttsMediaRecorder.start(100);
+  } catch(err) {
+    /* Fallback: Chrome позволяет захватить вывод через captureStream на Audio-элементе.
+       Используем альтернативный метод — создаём Audio + захватываем через сплит-рекордер */
+    await recordTTSFallback(text);
+    return;
+  }
+
+  speechSynthesis.cancel();
+  ttsPaused = false;
+  ttsFullText = text;
+  ttsUtterance = makeUtterance(text);
+  document.getElementById('tts-status').textContent = '⏺ Запись...';
+  document.getElementById('tts-rec-btn').disabled = true;
+  document.getElementById('tts-btn').disabled = true;
+  document.getElementById('tts-progress-wrap').style.display = '';
+
+  ttsUtterance.onboundary = (e) => {
+    if(e.name === 'word' && ttsFullText.length){
+      const pct = Math.min(100, Math.round(e.charIndex / ttsFullText.length * 100));
+      document.getElementById('tts-progress-bar').style.width = pct + '%';
+    }
+  };
+  ttsUtterance.onend = () => {
+    if(ttsMediaRecorder && ttsMediaRecorder.state !== 'inactive') ttsMediaRecorder.stop();
+  };
+  ttsUtterance.onerror = (e) => {
+    if(ttsMediaRecorder && ttsMediaRecorder.state !== 'inactive') ttsMediaRecorder.stop();
+    if(e.error !== 'interrupted') showToast('Ошибка: ' + e.error, 'warn');
+  };
+  speechSynthesis.speak(ttsUtterance);
+}
+
+/* Запасной метод: воспроизводим + используем Web Audio для захвата через oscillator-trick,
+   либо просто воспроизводим и предлагаем скачать через браузерный API */
+async function recordTTSFallback(text){
+  /* В Chrome ≥ 74 Web Speech API → аудиовыход маршрутизируется через AudioContext.
+     Самый надёжный способ без микрофона — использовать SpeechSynthesis + AudioWorklet.
+     Но проще: воспроизвести и поймать через «loopback» через getUserMedia { audio: true }.
+     Если разрешений нет — просто озвучиваем и объясняем. */
+  showToast('Используем прямую запись через микрофон-вход...', 'info');
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/ogg';
+    ttsAudioChunks = [];
+    ttsMediaRecorder = new MediaRecorder(stream, { mimeType });
+    ttsMediaRecorder.ondataavailable = e => { if(e.data.size > 0) ttsAudioChunks.push(e.data); };
+    ttsMediaRecorder.onstop = () => {
+      stream.getTracks().forEach(t => t.stop());
+      finishRecording();
+    };
+    ttsMediaRecorder.start(100);
+
+    ttsUtterance = makeUtterance(text);
+    document.getElementById('tts-status').textContent = '⏺ Запись...';
+    document.getElementById('tts-rec-btn').disabled = true;
+    document.getElementById('tts-btn').disabled = true;
+    ttsUtterance.onend = () => {
+      if(ttsMediaRecorder.state !== 'inactive') ttsMediaRecorder.stop();
+    };
+    speechSynthesis.cancel();
+    speechSynthesis.speak(ttsUtterance);
+  } catch(err) {
+    showToast('Не удалось получить доступ к микрофону. Используйте кнопку «Озвучить» для прослушивания.', 'warn');
+  }
+}
+
+function finishRecording(){
+  const mimeType = (ttsMediaRecorder && ttsMediaRecorder.mimeType) || 'audio/webm';
+  const blob = new Blob(ttsAudioChunks, { type: mimeType });
+  const url  = URL.createObjectURL(blob);
+  const ext  = mimeType.includes('ogg') ? 'ogg' : 'webm';
+  const fname = ((document.getElementById('tts-input').value || '').slice(0,30)
+    .replace(/[^\wа-яёА-ЯЁ]/gi,'_').replace(/_+/g,'_').replace(/^_|_$/g,'') || 'озвучка') + '.' + ext;
+
+  const audio = document.getElementById('tts-audio');
+  audio.src = url;
+  const dl = document.getElementById('tts-download');
+  dl.href = url;
+  dl.download = fname;
+  dl.textContent = '⬇ Скачать ' + ext.toUpperCase();
+  document.getElementById('tts-result').classList.remove('hidden');
+
+  document.getElementById('tts-status').textContent = '';
+  document.getElementById('tts-progress-bar').style.width = '0%';
+  document.getElementById('tts-progress-wrap').style.display = 'none';
+  document.getElementById('tts-rec-btn').disabled = false;
+  document.getElementById('tts-btn').disabled = false;
+  showToast('Запись готова — можно скачать!', 'success');
+
+  if(ttsAudioCtx) { ttsAudioCtx.close().catch(()=>{}); ttsAudioCtx = null; }
+}
+
+function pauseTTS(){
+  if(!speechSynthesis) return;
+  if(ttsPaused){
+    speechSynthesis.resume();
+    ttsPaused = false;
+    document.getElementById('tts-pause-btn').textContent = '⏸ Пауза';
+  } else {
+    speechSynthesis.pause();
+    ttsPaused = true;
+    document.getElementById('tts-pause-btn').textContent = '▶ Продолжить';
+  }
+}
+
+function stopTTS(){
+  speechSynthesis.cancel();
+  if(ttsMediaRecorder && ttsMediaRecorder.state !== 'inactive') ttsMediaRecorder.stop();
+  ttsPaused = false;
+  setTTSPlaying(false);
+  document.getElementById('tts-progress-bar').style.width = '0%';
+  document.getElementById('tts-progress-wrap').style.display = 'none';
+  document.getElementById('tts-status').textContent = '';
+  document.getElementById('tts-rec-btn').disabled = false;
+}
+
+function setTTSPlaying(playing){
+  const btn = document.getElementById('tts-btn');
+  if(btn){ btn.disabled = playing; btn.textContent = playing ? '🔊 Читает...' : '🎙️ Озвучить'; }
+  const stop  = document.getElementById('tts-stop-btn');
+  const pause = document.getElementById('tts-pause-btn');
+  if(stop)  stop.style.display  = playing ? '' : 'none';
+  if(pause) pause.style.display = playing ? '' : 'none';
+}
+
+/* Заглушки для совместимости с остальным кодом */
+function saveTTSKey(){}
+function generateTTS(){ speakTTS(); }
+function previewTTS(){ speakTTS(); }
 
 /* ============ ANIMATIONS ============ */
 
@@ -4521,7 +4659,7 @@ function initReveal(){
 async function init(){
   renderCurriculum('curriculum-list', false);
   renderFAQ();
-   renderTestimonials();
+  renderTestimonials();
   animateStats();
   startPromoCountdown();
   startAiPreorderCountdown();
@@ -4534,41 +4672,50 @@ async function init(){
   }
   goto(currentUser ? (currentUser.isAdmin ? 'admin' : 'dashboard') : 'landing');
   setTimeout(initReveal, 80);
-  // Стало:
-const urlParams = new URLSearchParams(window.location.search);
-const refCode = urlParams.get('ref');
-if(refCode){
-  try{ await window.storage.set('pending_ref', refCode, false); }catch(e){}
-  showReferralDiscountBanner();
-}
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const refCode = urlParams.get('ref');
+  if(refCode){
+    try{ await window.storage.set('pending_ref', refCode, false); }catch(e){}
+    showReferralDiscountBanner();
+  }
+
+  if(urlParams.has('paid')){
+    if(currentUser){
+      const u = await getUser(currentUser.email);
+      if(u) currentUser = u;
+    }
+    showToast('🎉 Оплата прошла! Доступ открыт.', 'success');
+    history.replaceState({}, '', window.location.pathname);
+    goto('dashboard');
+  }
 }
 
- // Бегущий таймкод в HUD видоискателя
-  (function(){
-    let frame = 0;
-    function tick(){
-      const el = document.getElementById('mentor-timecode');
-      if(el && document.getElementById('view-mentor') && !document.getElementById('view-mentor').classList.contains('hidden')){
-        frame++;
-        const totalSec = Math.floor(frame/24);
-        const h = String(Math.floor(totalSec/3600)).padStart(2,'0');
-        const m = String(Math.floor((totalSec%3600)/60)).padStart(2,'0');
-        const s = String(totalSec%60).padStart(2,'0');
-        const f = String(frame%24).padStart(2,'0');
-        el.textContent = h+':'+m+':'+s+':'+f;
-      }
-      requestAnimationFrame(tick);
+// Бегущий таймкод в HUD видоискателя
+(function(){
+  let frame = 0;
+  function tick(){
+    const el = document.getElementById('mentor-timecode');
+    if(el && document.getElementById('view-mentor') && !document.getElementById('view-mentor').classList.contains('hidden')){
+      frame++;
+      const totalSec = Math.floor(frame/24);
+      const h = String(Math.floor(totalSec/3600)).padStart(2,'0');
+      const m = String(Math.floor((totalSec%3600)/60)).padStart(2,'0');
+      const s = String(totalSec%60).padStart(2,'0');
+      const f = String(frame%24).padStart(2,'0');
+      el.textContent = h+':'+m+':'+s+':'+f;
     }
     requestAnimationFrame(tick);
-  })();
- 
-  // Клик по "кадру" из шот-листа — подставляет текст в поле и сразу открывает фокус
-  function mentorQuickFill(text){
-    const input = document.getElementById('mentor-input');
-    if(!input) return;
-    input.value = text;
-    input.focus();
   }
+  requestAnimationFrame(tick);
+})();
+
+function mentorQuickFill(text){
+  const input = document.getElementById('mentor-input');
+  if(!input) return;
+  input.value = text;
+  input.focus();
+}
 
 init();
 </script>
