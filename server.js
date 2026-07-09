@@ -7,6 +7,7 @@ const session = require('express-session');
 const pgSession = require('connect-pg-simple')(session);
 
 const app = express();
+app.set('trust proxy', 1); // Railway стоит за прокси, без этого secure-куки не работают
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -25,7 +26,7 @@ app.use(session({
   saveUninitialized: false,
   cookie: {
     httpOnly: true,
-    secure: true,
+    secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     maxAge: 1000 * 60 * 60 * 24 * 30 // 30 дней
   }
