@@ -4283,21 +4283,17 @@ async function mentorSend(){
   chat.scrollTop = chat.scrollHeight;
 
   try {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
+     const res = await fetch("/api/mentor", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-6",
-        max_tokens: 1000,
-        system: "Ты AI Video Mentor — помощник по созданию видео с ИИ. Помогаешь писать промпты для Veo, Kling, Runway, Midjourney. Отвечаешь на русском языке. Кратко, по делу, с конкретными примерами промптов если нужно.",
-        messages: [{ role: "user", content: text }]
-      })
+      credentials: "include",
+      body: JSON.stringify({ message: text })
     });
-
+ 
     const data = await res.json();
     document.getElementById(typingId)?.remove();
 
-    const answer = data.content?.[0]?.text || "Не удалось получить ответ.";
+    const answer = data.answer || "Не удалось получить ответ.";
 
     const answerId = "answer-" + Date.now();
     chat.innerHTML += `<div class="mentor-msg from-admin" id="${answerId}"></div>`;

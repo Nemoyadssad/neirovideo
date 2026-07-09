@@ -1,3 +1,5 @@
+require('dotenv').config(); // локально подхватит .env; на Railway переменные придут из Variables и это просто ничего не сделает
+
 const express = require('express');
 const cookieParser = require('cookie-parser');
 const crypto = require('crypto');
@@ -14,14 +16,18 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 });
 
-// Сессии через Postgres (переживают рестарт)
+if (!process.env.SESSION_SECRET) {
+  console.warn('ВНИМАНИЕ: SESSION_SECRET не задан в переменных окружения — задайте его в Railway Variables!');
+}
+
+// Сессии через Postgres (переживают рестарт сервиса)
 app.use(session({
   store: new pgSession({
     pool,
     tableName: 'user_sessions',
     createTableIfMissing: true
   }),
-  secret: process.env.SESSION_SECRET,
+  secret: process.env.SESSION_SECRET || 'dev-only-insecure-secret-change-me',
   resave: false,
   saveUninitialized: false,
   cookie: {
@@ -50,9 +56,9 @@ async function initDb() {
   `);
   console.log('DB ready');
 }
-initDb().catch(e => { console.error(e); process.exit(1); });
+initDb().catch(e => { console.error('DB init failed:', e); process.exit(1); });
 
-// Middleware: browser id в httpOnly-куке для персональных данных
+// Middleware: browser id в httpOnly-куке для персональных (не shared) данных
 app.use((req, res, next) => {
   let bid = req.cookies.bid;
   if (!bid) {
@@ -72,11 +78,14 @@ function ownerFor(req, shared) {
   return shared ? '' : req.bid;
 }
 
+// ---- health check (удобно проверять что сервис жив) ----
+app.get('/health', (req, res) => res.json({ ok: true }));
+
 // ---- KV API ----
 
 app.post('/api/kv/get', async (req, res) => {
   try {
-    const { key, shared } = req.body;
+    const { key, shared } = req.body || {};
     const owner = ownerFor(req, !!shared);
     const r = await pool.query(
       'SELECT value FROM kv_store WHERE k=$1 AND shared=$2 AND owner=$3',
@@ -92,7 +101,7 @@ app.post('/api/kv/get', async (req, res) => {
 
 app.post('/api/kv/set', async (req, res) => {
   try {
-    const { key, value, shared } = req.body;
+    const { key, value, shared } = req.body || {};
     const owner = ownerFor(req, !!shared);
     await pool.query(
       `INSERT INTO kv_store (k, shared, owner, value, updated_at)
@@ -110,7 +119,7 @@ app.post('/api/kv/set', async (req, res) => {
 
 app.post('/api/kv/delete', async (req, res) => {
   try {
-    const { key, shared } = req.body;
+    const { key, shared } = req.body || {};
     const owner = ownerFor(req, !!shared);
     await pool.query(
       'DELETE FROM kv_store WHERE k=$1 AND shared=$2 AND owner=$3',
@@ -125,7 +134,7 @@ app.post('/api/kv/delete', async (req, res) => {
 
 app.post('/api/kv/list', async (req, res) => {
   try {
-    const { prefix, shared } = req.body;
+    const { prefix, shared } = req.body || {};
     const owner = ownerFor(req, !!shared);
     const r = await pool.query(
       'SELECT k FROM kv_store WHERE shared=$1 AND owner=$2 AND k LIKE $3',
@@ -138,28 +147,41 @@ app.post('/api/kv/list', async (req, res) => {
   }
 });
 
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+// ---- AI Video Mentor (ключ Anthropic хранится только на сервере) ----
+app.post('/api/mentor', async (req, res) => {
+  try {
+    const { message } = req.body || {};
+    if (!message || typeof message !== 'string') {
+      return res.status(400).json({ error: 'no_message' });
+    }
+    if (!process.env.ANTHROPIC_API_KEY) {
+      return res.status(500).json({ error: 'no_api_key_configured' });
+    }
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': process.env.ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        system: 'Ты AI Video Mentor — помощник по созданию видео с ИИ. Помогаешь писать промпты для Veo, Kling, Runway. Отвечаешь кратко, на русском.',
+        messages: [{ role: 'user', content: message }]
+      })
+    });
+    const data = await r.json();
+    res.json({ answer: data.content?.[0]?.text || 'Не удалось получить ответ.' });
+  } catch (e) {
+    console.error('mentor error:', e);
+    res.status(500).json({ error: 'mentor_error' });
+  }
 });
 
-app.post('/api/mentor', async (req, res) => {
-  const { message } = req.body;
-  const r = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': process.env.ANTHROPIC_API_KEY,
-      'anthropic-version': '2023-06-01'
-    },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 1000,
-      system: 'Ты AI Video Mentor — помощник по созданию видео с ИИ. Помогаешь писать промпты для Veo, Kling, Runway. Отвечаешь кратко, на русском.',
-      messages: [{ role: 'user', content: message }]
-    })
-  });
-  const data = await r.json();
-  res.json({ answer: data.content?.[0]?.text || 'Ошибка' });
+// SPA fallback — любой GET, не подошедший под статику и API, отдаёт index.html
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 const PORT = process.env.PORT || 3000;
