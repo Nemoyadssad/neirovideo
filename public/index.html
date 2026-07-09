@@ -232,9 +232,9 @@
   .upsell-card{background:var(--surface); border:1px dashed var(--accent); border-radius:16px; padding:20px; margin-bottom:36px; display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap;}
 
   /* Admin */
-  .admin-grid{display:grid; grid-template-columns:320px 1fr; gap:24px; align-items:flex-start;}
+  .admin-grid{display:grid; grid-template-columns:320px 1fr; gap:24px; align-items:stretch;}
   @media (max-width:860px){.admin-grid{grid-template-columns:1fr;}}
-  .userlist{background:var(--surface); border:1px solid var(--line); border-radius:16px; overflow:hidden; max-height:600px; overflow-y:auto;}
+  .userlist{background:var(--surface); border:1px solid var(--line); border-radius:16px; overflow:hidden; max-height:none; overflow-y:auto;}
   .userrow{padding:14px 16px; border-bottom:1px solid var(--line); cursor:pointer; font-size:13px;}
   .userrow:hover{background:#1c1d29;}
   .userrow.active{background:var(--accent-soft);}
@@ -247,9 +247,9 @@
   .tag.admin{color:var(--accent); border-color:var(--accent);}
 
   /* Chat panel — admin */
-  .chatpanel{background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:20px; min-height:500px; display:flex; flex-direction:column;}
+  .chatpanel{background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:20px; height:100%; display:flex; flex-direction:column;}
   .chatpanel-empty{flex:1; display:flex; align-items:center; justify-content:center; color:var(--text-muted); font-size:14px;}
-  .chatmsgs{flex:1; overflow-y:auto; max-height:340px; display:flex; flex-direction:column; gap:8px; margin-bottom:10px; padding-right:4px;}
+  .chatmsgs{flex:1; overflow-y:auto; max-height:280px; display:flex; flex-direction:column; gap:8px; margin-bottom:10px; padding-right:4px;}
   .chatmsgs::-webkit-scrollbar{width:4px;}
   .chatmsgs::-webkit-scrollbar-track{background:transparent;}
   .chatmsgs::-webkit-scrollbar-thumb{background:var(--line); border-radius:2px;}
@@ -278,7 +278,7 @@
   .quickreplies{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px;}
   .qr-btn{font-size:12px; padding:7px 12px; border-radius:100px; border:1px solid var(--line); background:var(--bg-soft); color:var(--text-muted); cursor:pointer; transition:all .15s; white-space:nowrap;}
   .qr-btn:hover{border-color:var(--accent); color:var(--text);}
-  .qr-scroll{display:flex; gap:6px; overflow-x:auto; padding-bottom:2px; margin-bottom:10px;}
+  .qr-scroll{display:flex; gap:6px; flex-wrap:wrap; overflow-x:visible; padding-bottom:2px; margin-bottom:10px;}
   .qr-scroll::-webkit-scrollbar{height:3px;}
   .qr-scroll::-webkit-scrollbar-thumb{background:var(--line); border-radius:2px;}
 
@@ -1988,7 +1988,7 @@ style="width:100%;padding:16px;border-radius:12px;">
 </div>
 
 <!-- ===================== ADMIN ===================== -->
-<div id="view-admin" class="hidden">
+<div id="view-admin" class="hidden" style="background:radial-gradient(ellipse at 20% 0%, #8B6BFF0d, transparent 50%), radial-gradient(ellipse at 80% 100%, #FF6B5B08, transparent 50%);">
   <div class="wrap section">
     <div class="dash-top">
       <div>
