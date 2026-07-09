@@ -1,50 +1,39 @@
 const express = require('express');
 const cookieParser = require('cookie-parser');
 const crypto = require('crypto');
-const { Pool } = require('pg');
 const path = require('path');
-
-// Добавить в начало server.js (после require('express'), require('pg') и т.д.)
-
+const { Pool } = require('pg');
 const session = require('express-session');
 const pgSession = require('connect-pg-simple')(session);
-const { Pool } = require('pg');
+
+const app = express();
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false } // обычно нужно для Railway Postgres
+  ssl: { rejectUnauthorized: false }
 });
 
+// Сессии через Postgres (переживают рестарт)
 app.use(session({
   store: new pgSession({
-    pool,                // используем тот же пул, что и для остальных запросов
-    tableName: 'user_sessions', // создастся автоматически при первом запуске
+    pool,
+    tableName: 'user_sessions',
     createTableIfMissing: true
   }),
-  secret: process.env.SESSION_SECRET, // добавьте эту переменную в Railway Variables!
+  secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
   cookie: {
     httpOnly: true,
-    secure: true,      // обязательно true, если сайт на https (а он на https)
+    secure: true,
     sameSite: 'lax',
-    maxAge: 1000 * 60 * 60 * 24 * 30 // сессия живёт 30 дней
+    maxAge: 1000 * 60 * 60 * 24 * 30 // 30 дней
   }
 }));
 
-// Дальше идут ваши роуты /api/kv/get, /api/kv/set и т.д.
-// Теперь req.session переживёт рестарт сервера, потому что хранится в Postgres,
-// а не в оперативной памяти процесса.
-
-const app = express();
 app.use(express.json({ limit: '2mb' }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
-
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.DATABASE_URL?.includes('railway') ? { rejectUnauthorized: false } : false
-});
 
 // Создаём таблицу при старте
 async function initDb() {
@@ -62,8 +51,7 @@ async function initDb() {
 }
 initDb().catch(e => { console.error(e); process.exit(1); });
 
-// Middleware: у каждого браузера — свой browser id (bid) в httpOnly-куке.
-// Он используется только для "персональных" (shared:false) данных.
+// Middleware: browser id в httpOnly-куке для персональных данных
 app.use((req, res, next) => {
   let bid = req.cookies.bid;
   if (!bid) {
@@ -83,7 +71,7 @@ function ownerFor(req, shared) {
   return shared ? '' : req.bid;
 }
 
-// ---- KV API, повторяет семантику window.storage ----
+// ---- KV API ----
 
 app.post('/api/kv/get', async (req, res) => {
   try {
