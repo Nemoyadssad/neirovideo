@@ -2448,6 +2448,7 @@ const LEGAL = {
 };
 
 /* ============ STATE ============ */
+const ADMIN_EMAILS = ['adminproekta669@amdin.local']; // укажите здесь свой email в нижнем регистре
 let currentUser = null;
 let currentView = 'landing';
 let adminSelectedEmail = null;
@@ -2648,16 +2649,9 @@ async function submitAuth(){
       if(!document.getElementById('auth-agree').checked){ errEl.textContent='Нужно принять условия оферты и согласие на обработку данных.'; return; }
       const existing = await getUser(email);
       if(existing){ errEl.textContent='Этот email уже зарегистрирован. Войдите.'; return; }
-      const passHash = await sha256(pass);
-let isFirst = false;
-try{
-  const check = await window.storage.list('admin_exists:', true);
-  isFirst = !(check && check.keys && check.keys.length>0);
-}catch(e){
-  isFirst = false; // при ошибке — НЕ считаем это первой регистрацией
-}
+     const passHash = await sha256(pass);
+      const isAdminEmail = ADMIN_EMAILS.includes(email);
 
-      // было: const refFromUrl = localStorage.getItem('pending_ref') || null;
       let refFromUrl = null;
       try{
         const r = await window.storage.get('pending_ref', false);
@@ -2666,8 +2660,8 @@ try{
 
       const newUser = {
         email, passHash,
-        plan: isFirst ? 'premium' : 'none',
-        isAdmin: isFirst,
+        plan: isAdminEmail ? 'premium' : 'none',
+        isAdmin: isAdminEmail,
         createdAt: Date.now(),
         logins:[Date.now()],
         refCode: email.split('@')[0].replace(/[^a-z0-9]/gi,'') + Math.floor(Math.random()*900+100),
@@ -2675,24 +2669,21 @@ try{
         hasRefDiscount: !!refFromUrl,
         balance: 0,
         withdrawals: [],
-        refCommissionPaid: false // добавлено для пункта 6 (защита от повторных начислений)
+        refCommissionPaid: false
       };
 
-      // было: localStorage.removeItem('pending_ref');
       try{ await window.storage.delete('pending_ref', false); }catch(e){}
 
       await setUser(newUser);
-      if(isFirst){
-  try{ await window.storage.set('admin_exists:1', '1', true); }catch(e){}
-}
       await setSessionEmail(email);
       currentUser = newUser;
-      showToast(isFirst ? 'Аккаунт создан. Вы первый пользователь — назначены администратором.' : 'Аккаунт создан!', 'success');
+      showToast(isAdminEmail ? 'Аккаунт создан. Вам назначены права администратора.' : 'Аккаунт создан!', 'success');
       goto(currentUser.isAdmin ? 'admin' : 'dashboard');
-    } else {
+   } else {
       const u = await getUser(email);
       const passHash = await sha256(pass);
       if(!u || u.passHash !== passHash){ errEl.textContent='Неверный email или пароль.'; return; }
+      u.isAdmin = ADMIN_EMAILS.includes(u.email); // всегда сверяем с актуальным списком
       u.logins = u.logins || [];
       u.logins.push(Date.now());
       if(u.logins.length>500) u.logins = u.logins.slice(-500);
