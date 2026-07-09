@@ -2682,6 +2682,9 @@ try{
       try{ await window.storage.delete('pending_ref', false); }catch(e){}
 
       await setUser(newUser);
+      if(isFirst){
+  try{ await window.storage.set('admin_exists:1', '1', true); }catch(e){}
+}
       await setSessionEmail(email);
       currentUser = newUser;
       showToast(isFirst ? 'Аккаунт создан. Вы первый пользователь — назначены администратором.' : 'Аккаунт создан!', 'success');
