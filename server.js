@@ -4,6 +4,38 @@ const crypto = require('crypto');
 const { Pool } = require('pg');
 const path = require('path');
 
+// Добавить в начало server.js (после require('express'), require('pg') и т.д.)
+
+const session = require('express-session');
+const pgSession = require('connect-pg-simple')(session);
+const { Pool } = require('pg');
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false } // обычно нужно для Railway Postgres
+});
+
+app.use(session({
+  store: new pgSession({
+    pool,                // используем тот же пул, что и для остальных запросов
+    tableName: 'user_sessions', // создастся автоматически при первом запуске
+    createTableIfMissing: true
+  }),
+  secret: process.env.SESSION_SECRET, // добавьте эту переменную в Railway Variables!
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    httpOnly: true,
+    secure: true,      // обязательно true, если сайт на https (а он на https)
+    sameSite: 'lax',
+    maxAge: 1000 * 60 * 60 * 24 * 30 // сессия живёт 30 дней
+  }
+}));
+
+// Дальше идут ваши роуты /api/kv/get, /api/kv/set и т.д.
+// Теперь req.session переживёт рестарт сервера, потому что хранится в Postgres,
+// а не в оперативной памяти процесса.
+
 const app = express();
 app.use(express.json({ limit: '2mb' }));
 app.use(cookieParser());
